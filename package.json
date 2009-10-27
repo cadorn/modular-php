@@ -1,0 +1,6 @@
+{
+    "name": "modular-php",
+    "dependencies": [
+        "narwhal"
+    ]
+}
