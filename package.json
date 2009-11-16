@@ -7,6 +7,10 @@
         "core": {
             "catalog": "http://github.com/cadorn/modular-php/raw/master/catalog.json",
             "name": "core"
+        },
+        "util": {
+            "catalog": "http://github.com/cadorn/modular-php/raw/master/catalog.json",
+            "name": "util"
         }
     }
 }

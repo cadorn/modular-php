@@ -1,5 +1,9 @@
 <?php
 
+require_once(dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . 'functions' . DIRECTORY_SEPARATOR . 'mp_require.php');
+require_once dirname(__FILE__) . DIRECTORY_SEPARATOR .  'Sandbox.php';
+
+
 class ModularPHP_Bootstrap
 {
     const DEBUG = false;
@@ -49,6 +53,9 @@ class ModularPHP_Bootstrap
             PATH_SEPARATOR . 
             get_include_path()
         );
+
+        ModularPHP_Sandbox::setPackages($this->packages);
+        ModularPHP_Sandbox::setActive($this->packageName);
     }
     
     private function assembleIncludePath($packageName, &$includePath)

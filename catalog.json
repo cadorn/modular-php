@@ -5,6 +5,10 @@
         "core": {
             "location": "http://github.com/cadorn/modular-php/zipball/master/",
             "path": "packages/core"
+        },
+        "util": {
+            "location": "http://github.com/cadorn/modular-php/zipball/master/",
+            "path": "packages/util"
         }
     }
 }
