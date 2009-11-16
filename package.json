@@ -2,5 +2,11 @@
     "name": "modular-php",
     "dependencies": [
         "narwhal"
-    ]
+    ],
+    "using": {
+        "core": {
+            "catalog": "http://github.com/cadorn/modular-php/raw/master/catalog.json",
+            "name": "core"
+        }
+    }
 }

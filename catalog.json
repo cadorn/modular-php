@@ -1,4 +1,10 @@
 {
     "schema": "1.1",
-    "packages": {}
+    "location": "http://github.com/cadorn/modular-php/raw/master/catalog.json",
+    "packages": {
+        "core": {
+            "location": "http://github.com/cadorn/modular-php/zipball/master/",
+            "path": "packages/core"
+        }
+    }
 }
