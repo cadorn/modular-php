@@ -44,6 +44,10 @@ class ModularPHP_Bootstrap
             throw new Exception('Package "'.$this->packageName.'" not found in system packages ('.implode(',', array_keys($this->packages['system'])).')!');
         }
         
+        // TODO: Set timezone based on packageDatum
+        date_default_timezone_set('America/Vancouver');
+        
+        
         $includePath = array();
         if(self::DEBUG) print('[Debug]   ->assembleIncludePath()'."\n");
         $this->assembleIncludePath($this->packageName, $includePath);
@@ -60,14 +64,21 @@ class ModularPHP_Bootstrap
     
     private function assembleIncludePath($packageName, &$includePath)
     {
-        $packageInfo = $this->packages['using'][$packageName];
-        if(!$packageInfo) $packageInfo = $this->packages['system'][$packageName];
+        $packageInfo = null;
+        if(isset($this->packages['using'][$packageName])) {
+            $packageInfo = $this->packages['using'][$packageName];
+        } else
+        if(isset($this->packages['system'][$packageName])) {
+            $packageInfo = $this->packages['system'][$packageName];
+        } else {
+            throw new Exception('Could not find package info for package: ' . $packageName);
+        }
 
         if(self::DEBUG) print('[Debug]     Added package "'.$packageName.'" at path: '.$packageInfo[0] . DIRECTORY_SEPARATOR . 'lib'."\n");
                 
         $includePath[] = $packageInfo[0] . DIRECTORY_SEPARATOR . 'lib';
         
-        if($packageInfo[1]->using) {
+        if(isset($packageInfo[1]->using)) {
             foreach( $packageInfo[1]->using as $using ) {
                 $packageName = null;
                 if($using->catalog) {
@@ -101,6 +112,10 @@ class ModularPHP_Bootstrap
                     if(self::DEBUG) print('[Debug]     Found package at: '.$file."\n");
                     
                     $datum = json_decode(file_get_contents($file));
+                    if(!$datum) {
+                        throw new Exception('JSON Error ['.$this->getJsonError(json_last_error()).'] in file: '.$file);
+                    }
+
                     $this->packages['system'][$datum->name] = array($entry->getPathname(), $datum);
                     
                     $this->scanPackages($entry->getPathname());
@@ -124,6 +139,9 @@ class ModularPHP_Bootstrap
                     if(self::DEBUG) print('[Debug]     Found package at: '.$file."\n");
                     
                     $datum = json_decode(file_get_contents($file));
+                    if(!$datum) {
+                        throw new Exception('JSON Error ['.$this->getJsonError(json_last_error()).'] in file: '.$file);
+                    }
                     
                     $this->packages['using'][$subPath.DIRECTORY_SEPARATOR.$entry->getBasename()] = array($entry->getPathname(), $datum);
                 } else {
@@ -132,6 +150,22 @@ class ModularPHP_Bootstrap
             }
         }
     }
+    
+    private function getJsonError($number)
+    {
+        switch($number)
+        {
+            case JSON_ERROR_DEPTH:
+                return 'Maximum stack depth exceeded';
+            case JSON_ERROR_CTRL_CHAR:
+                return 'Unexpected control character found';
+            case JSON_ERROR_SYNTAX:
+                return 'Syntax error, malformed JSON';
+            case JSON_ERROR_NONE:
+                return 'No errors';
+        }
+    }    
+    
 }
 
 /*    

@@ -11,6 +11,10 @@
         "util": {
             "catalog": "http://github.com/cadorn/modular-php/raw/master/catalog.json",
             "name": "util"
+        },
+        "phpgi": {
+            "catalog": "http://github.com/cadorn/modular-php/raw/master/catalog.json",
+            "name": "phpgi"
         }
     }
 }

@@ -9,6 +9,10 @@
         "util": {
             "location": "http://github.com/cadorn/modular-php/zipball/master/",
             "path": "packages/util"
+        },
+        "phpgi": {
+            "location": "http://github.com/cadorn/modular-php/zipball/master/",
+            "path": "packages/phpgi"
         }
     }
 }

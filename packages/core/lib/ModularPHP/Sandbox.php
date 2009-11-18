@@ -18,12 +18,16 @@ class ModularPHP_Sandbox
         self::$packages = $packages;
     }
 
-    public static function SetActive($packageName)
+    public static function SetActive($package)
     {
-        if(!self::$sandboxes[$packageName]) {
-            self::$sandboxes[$packageName] = new ModularPHP_Sandbox($packageName);
+        if(is_string($package)) {
+            if(!isset(self::$sandboxes[$package])) {
+                self::$sandboxes[$package] = new ModularPHP_Sandbox($package);
+            }
+            self::$activeSandbox = self::$sandboxes[$package];
+        } else {
+            self::$activeSandbox = $package;
         }
-        self::$activeSandbox = self::$sandboxes[$packageName];
     }
 
     public static function GetActive()
@@ -34,8 +38,15 @@ class ModularPHP_Sandbox
     
     private static function getPackageInfo($packageName)
     {
-        $info = self::$packages['using'][$packageName];
-        if(!$info) $info = self::$packages['system'][$packageName];
+        $info = null;
+        if(isset(self::$packages['using'][$packageName])) {
+            $info = self::$packages['using'][$packageName];
+        } else
+        if(isset(self::$packages['system'][$packageName])) {
+            $info = self::$packages['system'][$packageName];
+        } else {
+            throw new Exception('Could not find package info for package: ' . $packageName);
+        }
         return $info;
     }
 
@@ -46,7 +57,10 @@ class ModularPHP_Sandbox
         
         $this->usingPackages = array();
         $packageInfo = self::getPackageInfo($packageName);
-        if($packageInfo[1]->using) {
+
+        $this->packagePath = realpath($packageInfo[0]);
+
+        if(isset($packageInfo[1]->using)) {
             foreach( $packageInfo[1]->using as $name => $using ) {
                 $packageName = null;
                 if($using->catalog) {
@@ -65,9 +79,21 @@ class ModularPHP_Sandbox
         
     public function requireModule($module, $packageName)
     {
-        if($packageName===null) {
+        if($module{0}=='.') {
+            if(!file_exists($packageName)) {
+                throw new Exception('Second argument to mp_require() must be __FILE__ when using relative module path: ' + $module);
+            }
             
-            throw new Exception("NYI: mp_require() without package argument");
+            $file = realpath(dirname($packageName) . DIRECTORY_SEPARATOR . $module . '.php');
+            if(!$file || !file_exists($file)) {
+                throw new Exception('Module for ID "'.$module.'" in package "'.$this->packageName.'" not found at: ' .dirname($packageName) . DIRECTORY_SEPARATOR . $module . '.php');
+            }
+            
+            $class = substr($file, strlen($this->packagePath)+5, -4);
+            
+            $class = str_replace('/','_', $module);
+
+            require_once($file);
             
         } else {
             if(!$this->usingPackages[$packageName]) {
@@ -82,9 +108,17 @@ class ModularPHP_Sandbox
             if(!file_exists($file)) {
                 throw new Exception('Module for ID "'.$module.'" in package "'.$this->usingPackages[$packageName].'" not found at: ' .$file);
             }
+
+            $class = str_replace('/','_', $module);
+            
+            $oldActive = self::GetActive();
+            self::SetActive($this->usingPackages[$packageName]);
+            
             require_once($file);
+            
+            self::SetActive($oldActive);
         }
-
+                
+        return $class;
     }
-
 }
