@@ -27,5 +27,16 @@ class PHPGI_Env
             case 'QUERY_STRING':
             	return $_SERVER['QUERY_STRING'];           
         }
+    }
+
+    public function getGet($name=null)
+    {
+        if($name!==null) {
+            if(!isset($_GET[$name])) {
+                return null;
+            }
+            return $_GET[$name];
+        }
+        return $_GET;
     }    
 }

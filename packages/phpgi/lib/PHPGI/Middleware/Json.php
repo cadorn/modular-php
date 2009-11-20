@@ -7,7 +7,18 @@ class PHPGI_Middleware_Json extends PHPGI_App
         $response = $this->app->run($env);
         
 //        $response['headers']['Content-Type'] = 'application/json';
-        $response['body'] = json_encode($response['body']);
+
+
+        // JSONP
+        if($jsoncallback = $env->getGet('jsoncallback')) {
+            
+            $response['body'] = $jsoncallback . '(' . json_encode($response['body']) . ')';
+
+        } else {
+            // Plain JSON
+            
+            $response['body'] = json_encode($response['body']);
+        }
 
         return $response;
     }
