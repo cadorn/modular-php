@@ -1,3 +1,11 @@
 {
-    "name": "phpgi"
+    "uid": "http://registry.pinf.org/cadorn.org/github/modular-php/packages/phpgi/",
+    "name": "phpgi",
+    "repositories": [
+        {
+            "type": "git",
+            "url": "git://github.com/cadorn/modular-php.git",
+            "path": "packages/phpgi"
+        }
+    ]
 }

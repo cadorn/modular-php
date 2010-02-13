@@ -58,9 +58,10 @@ class ModularPHP_Sandbox
         $this->usingPackages = array();
         $packageInfo = self::getPackageInfo($packageName);
 
-        $this->packagePath = realpath($packageInfo[0]);
+        $this->packagePath = realpath($packageInfo["path"]);
 
-        if(isset($packageInfo[1]->using)) {
+/*
+        if(isset($packageInfo["descriptor"]->using)) {
             foreach( $packageInfo[1]->using as $name => $using ) {
                 $packageName = null;
                 if($using->catalog) {
@@ -75,9 +76,10 @@ class ModularPHP_Sandbox
                 }
             }
         }
+*/        
     }
         
-    public function requireModule($module, $packageName)
+    public function requireModule($module, $packageName=null)
     {
         if($module{0}=='.') {
             if(!file_exists($packageName)) {
@@ -88,14 +90,27 @@ class ModularPHP_Sandbox
             if(!$file || !file_exists($file)) {
                 throw new Exception('Module for ID "'.$module.'" in package "'.$this->packageName.'" not found at: ' .dirname($packageName) . DIRECTORY_SEPARATOR . $module . '.php');
             }
-            
+
             $class = substr($file, strlen($this->packagePath)+5, -4);
-            
+
             $class = str_replace('/','_', $module);
 
             require_once($file);
+
+        } else
+        if(!$packageName) {
+            
+            $file = $module . ".php";
+            
+            $class = str_replace('/','_', $module);
+
+            require($file);
             
         } else {
+            
+            throw new Exception("Module '".$module."' require with package '".$packageName."' not supported yet!");
+            
+/*            
             if(!$this->usingPackages[$packageName]) {
                 throw new Exception('Package with name "'.$packageName.'" not declared as dependency for package: ' . $this->packageName);
             }
@@ -117,6 +132,7 @@ class ModularPHP_Sandbox
             require_once($file);
             
             self::SetActive($oldActive);
+*/
         }
                 
         return $class;

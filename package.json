@@ -1,20 +1,10 @@
 {
+    "uid": "http://registry.pinf.org/cadorn.org/github/modular-php/",
     "name": "modular-php",
-    "dependencies": [
-        "narwhal"
-    ],
-    "using": {
-        "core": {
-            "catalog": "http://github.com/cadorn/modular-php/raw/master/catalog.json",
-            "name": "core"
-        },
-        "util": {
-            "catalog": "http://github.com/cadorn/modular-php/raw/master/catalog.json",
-            "name": "util"
-        },
-        "phpgi": {
-            "catalog": "http://github.com/cadorn/modular-php/raw/master/catalog.json",
-            "name": "phpgi"
+    "repositories": [
+        {
+            "type": "git",
+            "url": "git://github.com/cadorn/modular-php.git"
         }
-    }
+    ]
 }

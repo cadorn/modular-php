@@ -8,118 +8,134 @@ class ModularPHP_Bootstrap
 {
     const DEBUG = false;
 
-    private $seaPath = null;
+    private $programHomePath = null;
     private $packageName = null;
     
     private $packages = array();
+    
+    private static $options = array();
+    
+    public static function SetOption($name, $value) {
+        self::$options[$name] = $value;
+    }
 
+    public static function GetOption($name) {
+        if(!array_key_exists($name, self::$options)) {
+            throw new Exception("Option not set: " . $name);
+        }
+        return self::$options[$name];
+    }
 
-    public static function Program($seaPath, $packageName)
+    public static function Program($programHomePath, $packageName, $extraPackages=null)
     {
         if(self::DEBUG) print('[Debug] ModularPHP_Bootstrap::Program("'.$packageName.'")'."\n");
         
-        $bootstrap = new ModularPHP_Bootstrap($seaPath, $packageName);
-        $bootstrap->bootstrap();
+        $bootstrap = new ModularPHP_Bootstrap($programHomePath, $packageName);
+        $bootstrap->bootstrap($extraPackages);
     }
     
-    private function __construct($seaPath, $packageName)
+    private function __construct($programHomePath, $packageName)
     {
-        $this->seaPath = $seaPath;
+        $this->programHomePath = $programHomePath;
         $this->packageName = $packageName;
     }
     
-    private function bootstrap()
+    private function bootstrap($extraPackages)
     {
         $this->packages = array('system'=>array(), 'using'=>array());
 
-        if(self::DEBUG) print('[Debug]   ->scanPackages("'.$this->seaPath.'")'."\n");
+        if(self::DEBUG) print('[Debug]   ->scanPackages("'.$this->programHomePath.'")'."\n");
 
-        $this->scanPackages($this->seaPath);
+        $this->scanPackages($this->programHomePath);
 
-        if(self::DEBUG) print('[Debug]   ->scanUsingPackages("'.$this->seaPath.DIRECTORY_SEPARATOR.'using'.'")'."\n");
+        if(self::DEBUG) print('[Debug]   ->scanUsingPackages("'.$this->programHomePath.DIRECTORY_SEPARATOR.'using'.'")'."\n");
 
-        $this->scanUsingPackages($this->seaPath . DIRECTORY_SEPARATOR . 'using');
+        $this->scanUsingPackages($this->programHomePath . DIRECTORY_SEPARATOR . 'using');
 
         if(!$this->packages['system'][$this->packageName]) {
             throw new Exception('Package "'.$this->packageName.'" not found in system packages ('.implode(',', array_keys($this->packages['system'])).')!');
         }
-        
+
+        if($extraPackages) {
+            foreach( $extraPackages as $type => $packages ) {
+                if($type=="system") {
+                    foreach( $packages as $package ) {
+                        $this->scanPackages($package["path"]);
+                    }
+                } else {
+                    throw new Exception("Package type not supported: " . $type);
+                }
+            }
+        }
+
         // TODO: Set timezone based on packageDatum
         date_default_timezone_set('America/Vancouver');
         
         
         $includePath = array();
         if(self::DEBUG) print('[Debug]   ->assembleIncludePath()'."\n");
-        $this->assembleIncludePath($this->packageName, $includePath);
-
+        $this->assembleIncludePath($includePath);
+/*
         set_include_path(
             implode(PATH_SEPARATOR, $includePath) . 
             PATH_SEPARATOR . 
             get_include_path()
         );
+*/
+        set_include_path(
+            implode(PATH_SEPARATOR, $includePath)
+        );
 
         ModularPHP_Sandbox::setPackages($this->packages);
         ModularPHP_Sandbox::setActive($this->packageName);
     }
-    
-    private function assembleIncludePath($packageName, &$includePath)
+
+    private function assembleIncludePath(&$includePath)
     {
-        $packageInfo = null;
-        if(isset($this->packages['using'][$packageName])) {
-            $packageInfo = $this->packages['using'][$packageName];
-        } else
-        if(isset($this->packages['system'][$packageName])) {
-            $packageInfo = $this->packages['system'][$packageName];
-        } else {
-            throw new Exception('Could not find package info for package: ' . $packageName);
+        if(!isset($this->packages['system'])) {
+            return;
         }
+        foreach( $this->packages['system'] as $name => $packageInfo ) {
 
-        if(self::DEBUG) print('[Debug]     Added package "'.$packageName.'" at path: '.$packageInfo[0] . DIRECTORY_SEPARATOR . 'lib'."\n");
-                
-        $includePath[] = $packageInfo[0] . DIRECTORY_SEPARATOR . 'lib';
-        
-        if(isset($packageInfo[1]->using)) {
-            foreach( $packageInfo[1]->using as $using ) {
-                $packageName = null;
-                if($using->catalog) {
-                    $uri = parse_url($using->catalog);
-                    $packageName = $uri['host'] . dirname($uri['path']) . DIRECTORY_SEPARATOR . $using->name;
-                } else
-                if($using->location) {
-                    $uri = parse_url($using->location);
-                    $packageName = $uri['host'] . dirname($uri['path']) . (($using->path)?DIRECTORY_SEPARATOR . $using->path:'');
-                } else {
-                    throw new Exception('Invalid package descriptor for using declaration.');
-                }
+            if(self::DEBUG) print('[Debug]     Added package at path: '.$packageInfo["path"] . DIRECTORY_SEPARATOR . 'lib'."\n");
 
-                $this->assembleIncludePath($packageName, $includePath);
-            }
+            $includePath[] = $packageInfo["path"] . DIRECTORY_SEPARATOR . 'lib';
         }
     }
 
     private function scanPackages($path)
     {
-        $path .= DIRECTORY_SEPARATOR . 'packages';
-        
         if(!file_exists($path) || !is_dir($path)) {
             return;
         }
         
+        $file = $path . DIRECTORY_SEPARATOR . 'package.json';
+        if(file_exists($file)) {
+            if(self::DEBUG) print('[Debug]     Found package at: '.$file."\n");
+
+            $descriptor = json_decode(file_get_contents($file), true);
+            if(!$descriptor) {
+                throw new Exception('JSON Error ['.$this->getJsonError(json_last_error()).'] in file: '.$file);
+            }
+            
+            // add the program package with own name, all other based on directory name
+            $name = basename($path);
+            if($path==$this->programHomePath) {
+                $name = $descriptor["name"];
+            }
+
+            $this->packages['system'][$name] = array(
+                'path' => $path,
+                'descriptor' => $descriptor
+            );
+        }
+        
+        $path .= DIRECTORY_SEPARATOR . 'packages';
+        if(!file_exists($path)) return;
+
         foreach( new DirectoryIterator($path) as $entry ) {
             if(!$entry->isDot() && $entry->isDir()) {
-                $file = $entry->getPathname() . DIRECTORY_SEPARATOR . 'package.json';
-                if(file_exists($file)) {
-                    if(self::DEBUG) print('[Debug]     Found package at: '.$file."\n");
-                    
-                    $datum = json_decode(file_get_contents($file));
-                    if(!$datum) {
-                        throw new Exception('JSON Error ['.$this->getJsonError(json_last_error()).'] in file: '.$file);
-                    }
-
-                    $this->packages['system'][$datum->name] = array($entry->getPathname(), $datum);
-                    
-                    $this->scanPackages($entry->getPathname());
-                }
+                $this->scanPackages($entry->getPathname());
             }
         }
     }
@@ -127,6 +143,7 @@ class ModularPHP_Bootstrap
 
     private function scanUsingPackages($basePath, $subPath='')
     {
+/*
         $path = $basePath . (($subPath)?DIRECTORY_SEPARATOR . $subPath : '');
         if(!file_exists($path) || !is_dir($path)) {
             return;
@@ -149,6 +166,7 @@ class ModularPHP_Bootstrap
                 }
             }
         }
+*/        
     }
     
     private function getJsonError($number)

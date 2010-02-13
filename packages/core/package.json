@@ -1,3 +1,11 @@
 {
-    "name": "core"
+    "uid": "http://registry.pinf.org/cadorn.org/github/modular-php/packages/core/",
+    "name": "core",
+    "repositories": [
+        {
+            "type": "git",
+            "url": "git://github.com/cadorn/modular-php.git",
+            "path": "packages/core"
+        }
+    ]
 }

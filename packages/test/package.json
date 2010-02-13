@@ -1,0 +1,47 @@
+{
+    "uid": "http://registry.pinf.org/cadorn.org/github/modular-php/packages/test/",
+    "name": "test",
+    "dependencies": {
+        "phpunit": {
+            "catalog": "http://registry.pinf.org/cadorn.org/github/modular-php-packages/packages/catalog.json",
+            "name": "phpunit",
+            "revision": "master"
+        },
+        "modular-php": {
+            "catalog": "http://registry.pinf.org/cadorn.org/github/platforms/packages/php/packages/catalog.json",
+            "name": "modular",
+            "revision": "master"
+        }
+    },
+    "implements": {
+        "http://registry.pinf.org/cadorn.org/github/pinf/@meta/routing/url/0.1.0": {
+            "mappings": {
+                "http://*/pinf/{accessKey}/@platforms/{platformName}/@uid/{uid}/@revision/{revision}/@direct/{path}": {
+                    "module": "gateway/direct"
+                }
+            }
+        }
+    },
+    "pinf": {
+        "platforms": {
+            "php": {
+                "catalog": "http://registry.pinf.org/cadorn.org/github/platforms/packages/catalog.json",
+                "name": "php",
+                "revision": "master"
+            }
+        },
+        "commands": {
+            "mp-test-direct-gateway": {
+                "path": "bin/mp-test-direct-gateway.php",
+                "platform": "php"
+            }
+        }
+    },
+    "repositories": [
+        {
+            "type": "git",
+            "url": "git://github.com/cadorn/modular-php.git",
+            "path": "packages/test"
+        }
+    ]
+}
